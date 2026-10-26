@@ -1,0 +1,135 @@
+#!/bin/bash
+# LXCPanel - 应用生命周期脚本 (start | stop | status)
+
+APPDIR="${TRIM_APPDEST:-/var/apps/LXCPanel/target}"
+VAR="${TRIM_PKGVAR:-/var/apps/LXCPanel/var}"
+LOG_FILE="${VAR}/info.log"
+PID_FILE="${VAR}/app.pid"
+
+mkdir -p "${VAR}" 2>/dev/null
+
+log_msg() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "${LOG_FILE}"
+}
+
+pick_bin() {
+    case "$(uname -m)" in
+        x86_64|amd64)   echo "${APPDIR}/server/lxcpanel-amd64" ;;
+        aarch64|arm64)  echo "${APPDIR}/server/lxcpanel-arm64" ;;
+        *)              echo "" ;;
+    esac
+}
+
+running_pid() {
+    if [ -r "${PID_FILE}" ]; then
+        local pid
+        pid=$(head -n 1 "${PID_FILE}" | tr -d '[:space:]')
+        if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+            echo "${pid}"
+            return 0
+        fi
+    fi
+    if command -v pgrep >/dev/null 2>&1; then
+        local p
+        p=$(pgrep -f "${APPDIR}/server/lxcpanel-" 2>/dev/null | head -n 1)
+        if [ -n "${p}" ]; then
+            echo "${p}"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+start_process() {
+    local pid
+    if pid=$(running_pid); then
+        log_msg "already running (pid=${pid})"
+        return 0
+    fi
+    rm -f "${PID_FILE}"
+
+    local bin
+    bin=$(pick_bin)
+    if [ -z "${bin}" ]; then
+        echo "不支持的 CPU 架构: $(uname -m)" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+        log_msg "unsupported arch: $(uname -m)"
+        return 1
+    fi
+    if [ ! -f "${bin}" ]; then
+        echo "缺少服务程序: ${bin}" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+        log_msg "missing binary: ${bin}"
+        return 1
+    fi
+
+    chmod +x "${bin}" 2>/dev/null
+
+    log_msg "starting ${bin}"
+    nohup "${bin}" -data "${VAR}" >> "${LOG_FILE}" 2>&1 &
+    echo $! > "${PID_FILE}"
+    sleep 1
+
+    if pid=$(running_pid); then
+        log_msg "started (pid=${pid})"
+        return 0
+    fi
+
+    echo "LXCPanel 启动失败，请查看日志: ${LOG_FILE}" > "${TRIM_TEMP_LOGFILE:-/dev/null}"
+    log_msg "start failed"
+    return 1
+}
+
+stop_process() {
+    local pid
+    if ! pid=$(running_pid); then
+        log_msg "not running"
+        rm -f "${PID_FILE}"
+        return 0
+    fi
+
+    log_msg "stopping pid=${pid}"
+    kill -TERM "${pid}" 2>/dev/null
+
+    local count=0
+    while kill -0 "${pid}" 2>/dev/null && [ ${count} -lt 12 ]; do
+        sleep 1
+        count=$((count + 1))
+    done
+
+    if kill -0 "${pid}" 2>/dev/null; then
+        log_msg "force killing pid=${pid}"
+        kill -KILL "${pid}" 2>/dev/null
+        sleep 1
+    fi
+
+    rm -f "${PID_FILE}"
+    log_msg "stopped"
+    return 0
+}
+
+status_process() {
+    if running_pid >/dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+case "$1" in
+    start)
+        start_process || exit 1
+        exit 0
+        ;;
+    stop)
+        stop_process || exit 1
+        exit 0
+        ;;
+    status)
+        if status_process; then
+            exit 0
+        else
+            exit 3
+        fi
+        ;;
+    *)
+        exit 1
+        ;;
+esac

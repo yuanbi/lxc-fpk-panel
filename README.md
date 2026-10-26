@@ -1,4 +1,4 @@
-# lxc-fpk-panel · 飞牛 fnOS LXC 容器管理面板
+# LXCPanel · 飞牛 fnOS LXC 容器管理面板
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-3da639.svg)](LICENSE)
 [![Go](https://img.shields.io/badge/Go-1.21%2B-00ADD8.svg?logo=go&logoColor=white)](src/go.mod)

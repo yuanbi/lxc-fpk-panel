@@ -1,0 +1,65 @@
+#!/bin/bash
+# 安装向导填写的管理密码会在本阶段以环境变量传入（wizard_password / wizard_password2 / wizard_lan_trust）
+
+APPDIR="${TRIM_APPDEST:-/var/apps/LXCPanel/target}"
+VAR="${TRIM_PKGVAR:-/var/apps/LXCPanel/var}"
+EMIT="${TRIM_TEMP_LOGFILE:-/dev/null}"
+
+mkdir -p "${VAR}" 2>/dev/null
+chmod 755 "${VAR}" 2>/dev/null
+chmod +x "${APPDIR}"/server/lxcpanel-* 2>/dev/null
+rm -f "${VAR}/app.pid" 2>/dev/null
+
+pick_bin() {
+    case "$(uname -m)" in
+        x86_64|amd64)   echo "${APPDIR}/server/lxcpanel-amd64" ;;
+        aarch64|arm64)  echo "${APPDIR}/server/lxcpanel-arm64" ;;
+        *)              echo "" ;;
+    esac
+}
+
+PASS="${wizard_password:-}"
+PASS2="${wizard_password2:-}"
+LAN_TRUST="${wizard_lan_trust:-true}"
+
+if [ -n "${PASS}" ]; then
+    if [ -n "${PASS2}" ] && [ "${PASS}" != "${PASS2}" ]; then
+        echo "两次输入的管理密码不一致，请重新安装并确认密码。" > "${EMIT}"
+        exit 1
+    fi
+
+    BIN=$(pick_bin)
+    if [ -z "${BIN}" ] || [ ! -f "${BIN}" ]; then
+        echo "未找到与当前架构匹配的服务程序（$(uname -m)）。" > "${EMIT}"
+        exit 1
+    fi
+
+    if ! printf '%s' "${PASS}" | "${BIN}" -set-pass -data "${VAR}" -lan-trust "${LAN_TRUST}" >/dev/null 2>>"${VAR}/install.log"; then
+        echo "管理密码写入失败，详见 ${VAR}/install.log。" > "${EMIT}"
+        exit 1
+    fi
+fi
+
+{
+    echo "=== $(date '+%Y-%m-%d %H:%M:%S') install_callback ==="
+    echo "appdir: ${APPDIR}"
+    echo "vardir: ${VAR}"
+    echo "arch: $(uname -m)"
+    if [ -n "${PASS}" ]; then
+        echo "admin password: initialized from wizard (lan_trust=${LAN_TRUST})"
+    else
+        echo "admin password: not provided, first-run setup in UI"
+    fi
+    if command -v lxc-info >/dev/null 2>&1; then
+        echo "lxc: $(lxc-info --version 2>/dev/null)"
+    else
+        echo "lxc: not installed (可在面板「运行环境」页一键安装)"
+    fi
+    if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+        echo "cgroup: v2"
+    else
+        echo "cgroup: v1"
+    fi
+} >> "${VAR}/install.log" 2>&1
+
+exit 0

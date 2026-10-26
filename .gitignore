@@ -1,0 +1,15 @@
+# build toolchain (large, re-downloadable)
+tools/go/
+tools/go.zip
+
+# build output
+*.fpk
+LXCPanel/app/server/lxcpanel-*
+LXCPanel/app/www/
+
+# local preview artifacts
+tools/shots/
+
+# OS junk
+.DS_Store
+Thumbs.db

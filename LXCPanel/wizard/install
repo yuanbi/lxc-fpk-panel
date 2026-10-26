@@ -1,0 +1,38 @@
+[
+  {
+    "stepTitle": "LXC 容器管理",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "本应用以 root 身份调用宿主机 lxc 工具链来管理容器。<br>安装完成后，点击飞牛桌面图标即可在窗口内打开面板。<br>请设置一个管理密码用于登录面板（忘记后可在服务器执行 <b>-set-pass</b> 重置）。"
+      },
+      {
+        "type": "password",
+        "field": "wizard_password",
+        "label": "管理密码",
+        "rules": [
+          { "required": true, "message": "请设置管理密码" },
+          { "min": 6, "message": "密码长度不能少于 6 位" }
+        ]
+      },
+      {
+        "type": "password",
+        "field": "wizard_password2",
+        "label": "确认密码",
+        "rules": [
+          { "required": true, "message": "请再次输入管理密码" }
+        ]
+      },
+      {
+        "type": "switch",
+        "field": "wizard_lan_trust",
+        "label": "同一局域网内免密码登录（推荐）",
+        "initValue": "true"
+      },
+      {
+        "type": "tips",
+        "helpText": "关闭后，除飞牛应用窗口与服务器本机外，其他设备访问面板都需要输入密码。面板仅监听内网端口，请勿直接暴露到公网。"
+      }
+    ]
+  }
+]

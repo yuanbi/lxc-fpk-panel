@@ -1,0 +1,14 @@
+appname               = LXCPanel
+version               = 1.0.13
+display_name          = LXC 容器管理
+desc                  = 面向飞牛 fnOS 的 LXC 容器管理面板：容器生命周期管理、发行版模板创建、Web 终端、实时资源监控与 REST API 控制，内嵌于飞牛桌面窗口运行。
+platform              = all
+source                = thirdparty
+maintainer            = yuanbi
+distributor           = yuanbi
+desktop_uidir         = ui
+desktop_applaunchname = LXCPanel.Application
+service_port          = 18080
+ctl_stop              = true
+checkport             = true
+changelog             = 1.0.13：修复「改完 root 密码还是登不上」——写密码后回读 /etc/shadow 校验哈希是否真的变了（不再只看命令退出码），没写进去直接报错；新增「检查登录 / 一键修好登录」：逐项核对 root 密码哈希、账号锁定、登录 shell、sshd 是否安装与运行、PermitRootLogin 与 PasswordAuthentication，红色项给出具体原因；一键修复会改回正常 shell、解锁 root、写入允许 root 密码登录的配置并重启 sshd，缺 openssh-server 时可一键安装。

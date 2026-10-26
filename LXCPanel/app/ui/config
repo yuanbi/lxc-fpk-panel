@@ -1,0 +1,13 @@
+{
+    ".url": {
+        "LXCPanel.Application": {
+            "title": "LXC 容器",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "18080",
+            "url": "/",
+            "allUsers": false
+        }
+    }
+}

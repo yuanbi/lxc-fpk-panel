@@ -1,0 +1,17 @@
+#!/bin/bash
+# 卸载前：停止面板服务
+
+APPDIR="${TRIM_APPDEST:-/var/apps/LXCPanel/target}"
+
+if [ -x "${APPDIR}/cmd/main" ]; then
+    "${APPDIR}/cmd/main" stop >/dev/null 2>&1
+fi
+
+VAR="${TRIM_PKGVAR:-/var/apps/LXCPanel/var}"
+if [ -r "${VAR}/app.pid" ]; then
+    pid=$(head -n 1 "${VAR}/app.pid" | tr -d '[:space:]')
+    [ -n "${pid}" ] && kill -TERM "${pid}" 2>/dev/null
+    rm -f "${VAR}/app.pid"
+fi
+
+exit 0
